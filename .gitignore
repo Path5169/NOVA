@@ -1,0 +1,19 @@
+*.iml
+.gradle/
+/local.properties
+.idea/
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+app/build/
+app/release/
+*.apk
+*.aab
+*.keystore
+*.jks
+
+# Keep the Gradle wrapper config that IS committed (properties file), but there's
+# intentionally no gradlew/gradlew.bat/gradle-wrapper.jar in this repo — see BUILD.md.
+!gradle/wrapper/gradle-wrapper.properties

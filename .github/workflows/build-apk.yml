@@ -1,0 +1,66 @@
+name: Build NOVA APK
+
+# Runs on GitHub's servers — not on your phone. Termux is only used to push code here.
+#
+# Trigger it three ways:
+#   1. Push to main / phase3 (builds automatically)
+#   2. Open the "Actions" tab on GitHub -> "Build NOVA APK" -> "Run workflow" (manual button)
+#   3. Push a tag like "v0.3.0" -> also creates a GitHub Release with the APK attached,
+#      which is the easiest way to download it straight from your phone's browser.
+
+on:
+  push:
+    branches: [ main, phase3 ]
+    tags: [ 'v*' ]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install required SDK packages
+        run: |
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+
+      # No gradlew is committed to this repo (it needs a binary jar that can't be hand-written
+      # offline). This step installs Gradle itself on the runner and puts a `gradle` command
+      # on PATH, which we call directly below instead of ./gradlew.
+      - name: Set up Gradle 8.7
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.7
+
+      - name: Build debug APK
+        run: gradle assembleDebug --stacktrace
+
+      - name: Upload debug APK as build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+      # Only runs when you push a version tag (e.g. `git tag v0.3.0 && git push origin v0.3.0`).
+      # Creates a GitHub Release with the APK attached directly to it — download it from your
+      # phone's browser without needing to sign into the Actions tab or unzip an artifact.
+      - name: Create GitHub Release with APK
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: app/build/outputs/apk/debug/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

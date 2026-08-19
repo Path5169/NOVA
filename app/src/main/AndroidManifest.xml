@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+        NOVA declares permissions here (required by the OS) but requests them
+        CONTEXTUALLY at runtime — only when the user opens a feature that needs
+        them (see PermissionGate.kt). None are requested on first launch.
+    -->
+
+    <!-- NOVA Network: connectivity + Wi-Fi diagnostics -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- NOVA Lab: GPS module -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <!-- NOVA Lab: microphone / sound-frequency visualizer -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!-- NOVA Vision / Device camera test (requested when those screens open) -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.any" android:required="false" />
+
+    <!-- NOVA Device: flashlight test -->
+    <uses-feature android:name="android.hardware.camera.flash" android:required="false" />
+
+    <!-- NOVA Device: vibration test -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!--
+        NOVA Private: unlocking the Private Space requires real device authentication
+        (BiometricPrompt with device credential fallback). This is a normal permission —
+        it does not grant NOVA access to any biometric data, and NOVA never stores or
+        sees the biometric itself; the OS handles matching and only reports success/failure.
+    -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+
+    <!--
+        NOVA App Space: per-app foreground time / last-used data. This is NOT a runtime
+        permission — declaring it only lets NOVA appear in the system "Usage access" settings
+        list. Nothing is readable until the user explicitly flips that switch for NOVA there.
+    -->
+    <uses-permission
+        android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
+
+    <!--
+        NOVA Shield: local DNS-only filtering via VpnService. BIND_VPN_SERVICE is a normal
+        system permission the OS enforces on the service itself — the *user* consent NOVA
+        actually needs is the standard system "Connection request" dialog shown by
+        VpnService.prepare(), triggered from the Shield screen, not a manifest permission.
+    -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <!-- Lets the persistent "Shield active" notification actually display on API 33+; Shield
+         itself still runs without it, this only affects whether the user sees the ongoing
+         notification. Requested contextually when Shield is first turned on. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <application
+        android:name=".NovaApplication"
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Nova"
+        android:hardwareAccelerated="true">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Nova"
+            android:screenOrientation="portrait"
+            android:configChanges="orientation|screenSize|keyboardHidden">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- NOVA Shield's local DNS filter. exported=false + BIND_VPN_SERVICE means only the
+             system can bind to it — no other app can start/control it. -->
+        <service
+            android:name=".feature.shield.ShieldVpnService"
+            android:exported="false"
+            android:permission="android.permission.BIND_VPN_SERVICE"
+            android:foregroundServiceType="specialUse">
+            <intent-filter>
+                <action android:name="android.net.VpnService" />
+            </intent-filter>
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Local on-device DNS ad/tracker filtering (NOVA Shield)" />
+        </service>
+
+    </application>
+</manifest>

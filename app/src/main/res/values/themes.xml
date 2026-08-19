@@ -1,0 +1,9 @@
+<resources>
+    <!-- Compose owns theming; this is only the pre-Compose window background / splash frame. -->
+    <style name="Theme.Nova" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/nova_bg</item>
+        <item name="android:statusBarColor">@color/nova_bg</item>
+        <item name="android:navigationBarColor">@color/nova_bg</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>
